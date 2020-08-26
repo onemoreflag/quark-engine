@@ -15,6 +15,7 @@ from quark.utils.colors import (
     yellow,
     green,
 )
+from quark.utils.graph import call_graph
 from quark.utils import tools
 
 MAX_SEARCH_LAYER = 3
@@ -33,6 +34,10 @@ class Quark:
 
         self.pre_method0 = []
         self.pre_method1 = []
+
+        # mutual parent function
+        self.mutual_parent_function = None
+        self.final_registerobject = None
 
         self.same_sequence_show_up = []
         self.same_operation = []
@@ -216,6 +221,7 @@ class Quark:
                     s for s in val_obj.called_by_func if all(xs in s for xs in matchers)
                 ]
                 if matching:
+                    self.final_registerobject = val_obj.called_by_func
                     state = True
                     break
         return state
@@ -303,6 +309,7 @@ class Quark:
                     # Level 5
                     if self.check_parameter(common_method, str(pre_0[1]), str(pre_1[1])):
                         rule_obj.check_item[4] = True
+                        self.mutual_parent_function = common_method
                         self.same_operation.append(common_method)
 
         else:
@@ -428,6 +435,16 @@ class Quark:
         self.weight_sum += weight
         # add the score
         self.score_sum += score
+
+
+        print(self.final_registerobject)
+        self.pre_method0.insert(0, rule_obj.x2n3n4_comb[0]["class"] + rule_obj.x2n3n4_comb[0]["method"])
+
+        self.pre_method1.insert(0, rule_obj.x2n3n4_comb[1]["class"] + rule_obj.x2n3n4_comb[1]["method"])
+        call_graph(self.pre_method0, self.pre_method1, mutual_parent_function=repr(self.mutual_parent_function),
+                   crime_description=rule_obj.crime,
+                   permission=rule_obj.x1_permission,
+                   register_object=self.final_registerobject)
 
     def show_detail_report(self, rule_obj):
         """
