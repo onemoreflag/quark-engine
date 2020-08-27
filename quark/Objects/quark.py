@@ -436,72 +436,68 @@ class Quark:
         # add the score
         self.score_sum += score
 
-
-        print(self.final_registerobject)
-        self.pre_method0.insert(0, rule_obj.x2n3n4_comb[0]["class"] + rule_obj.x2n3n4_comb[0]["method"])
-
-        self.pre_method1.insert(0, rule_obj.x2n3n4_comb[1]["class"] + rule_obj.x2n3n4_comb[1]["method"])
-        call_graph(self.pre_method0, self.pre_method1, mutual_parent_function=repr(self.mutual_parent_function),
+        call_graph(self.pre_method0, self.pre_method1, mutual_parent_function=self.mutual_parent_function,
                    crime_description=rule_obj.crime,
+                   first_natvie_call=(rule_obj.x2n3n4_comb[0]["class"], rule_obj.x2n3n4_comb[0]["method"]),
+                   second_native_call=(rule_obj.x2n3n4_comb[1]["class"], rule_obj.x2n3n4_comb[1]["method"]),
                    permission=rule_obj.x1_permission,
                    register_object=self.final_registerobject)
 
-    def show_detail_report(self, rule_obj):
-        """
-        Show the detail report.
+        def show_detail_report(self, rule_obj):
+            """
+            Show the detail report.
 
-        :param rule_obj: the instance of the RuleObject.
-        :return: None
-        """
+            :param rule_obj: the instance of the RuleObject.
+            :return: None
+            """
 
-        # Count the confidence
-        print("")
-        print(f"Confidence: {rule_obj.check_item.count(True) * 20}%")
-        print("")
-
-        if rule_obj.check_item[0]:
-
-            print(red(CHECK_LIST), end="")
-            print(green(bold("1.Permission Request")), end="")
+            # Count the confidence
+            print("")
+            print(f"Confidence: {rule_obj.check_item.count(True) * 20}%")
             print("")
 
-            for permission in rule_obj.x1_permission:
-                print(f"\t\t {permission}")
-        if rule_obj.check_item[1]:
-            print(red(CHECK_LIST), end="")
-            print(green(bold("2.Native API Usage")), end="")
-            print("")
+            if rule_obj.check_item[0]:
 
-            for class_name, method_name in self.level_2_reuslt:
-                print(f"\t\t ({class_name}, {method_name})")
-        if rule_obj.check_item[2]:
-            print(red(CHECK_LIST), end="")
-            print(green(bold("3.Native API Combination")), end="")
+                print(red(CHECK_LIST), end="")
+                print(green(bold("1.Permission Request")), end="")
+                print("")
 
-            print("")
-            print(
-                f"\t\t ({rule_obj.x2n3n4_comb[0]['class']}, {rule_obj.x2n3n4_comb[0]['method']})",
-            )
-            print(
-                f"\t\t ({rule_obj.x2n3n4_comb[1]['class']}, {rule_obj.x2n3n4_comb[1]['method']})",
-            )
-        if rule_obj.check_item[3]:
+                for permission in rule_obj.x1_permission:
+                    print(f"\t\t {permission}")
+            if rule_obj.check_item[1]:
+                print(red(CHECK_LIST), end="")
+                print(green(bold("2.Native API Usage")), end="")
+                print("")
 
-            print(red(CHECK_LIST), end="")
-            print(green(bold("4.Native API Sequence")), end="")
+                for class_name, method_name in self.level_2_reuslt:
+                    print(f"\t\t ({class_name}, {method_name})")
+            if rule_obj.check_item[2]:
+                print(red(CHECK_LIST), end="")
+                print(green(bold("3.Native API Combination")), end="")
 
-            print("")
-            print(f"\t\t Sequence show up in:")
-            for seq_method in self.same_sequence_show_up:
-                print(f"\t\t {repr(seq_method)}")
-        if rule_obj.check_item[4]:
+                print("")
+                print(
+                    f"\t\t ({rule_obj.x2n3n4_comb[0]['class']}, {rule_obj.x2n3n4_comb[0]['method']})",
+                )
+                print(
+                    f"\t\t ({rule_obj.x2n3n4_comb[1]['class']}, {rule_obj.x2n3n4_comb[1]['method']})",
+                )
+            if rule_obj.check_item[3]:
 
-            print(red(CHECK_LIST), end="")
-            print(green(bold("5.Native API Use Same Parameter")), end="")
-            print("")
-            for seq_operation in self.same_operation:
-                print(f"\t\t {repr(seq_operation)}")
+                print(red(CHECK_LIST), end="")
+                print(green(bold("4.Native API Sequence")), end="")
 
+                print("")
+                print(f"\t\t Sequence show up in:")
+                for seq_method in self.same_sequence_show_up:
+                    print(f"\t\t {repr(seq_method)}")
+            if rule_obj.check_item[4]:
 
-if __name__ == "__main__":
-    pass
+                print(red(CHECK_LIST), end="")
+                print(green(bold("5.Native API Use Same Parameter")), end="")
+                print("")
+                for seq_operation in self.same_operation:
+                    print(f"\t\t {repr(seq_operation)}")
+
+    if __name__ == "__main__":
+        pass
