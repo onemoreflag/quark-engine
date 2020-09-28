@@ -499,5 +499,5 @@ class Quark:
             for seq_operation in self.same_operation:
                 print(f"\t\t {repr(seq_operation)}")
 
-    if __name__ == "__main__":
-        pass
+if __name__ == "__main__":
+    pass
