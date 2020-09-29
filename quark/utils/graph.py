@@ -18,7 +18,7 @@ def call_graph(
     :param first_wrappers_list: a list contains the wrapped functions that based on the first Android API
     :param second_wrappers_list: a list contains the wrapped functions that based on the second Android API
     :param mutual_parent_function: the mutual parent function from given two Android APIs
-    :param crime_description: a string of the crime description
+    :param crime_description: a string about the crime description
     :param permission: a list contains the requested permission by this behavior
     :param register_object: a string contains the contents, which is the evidence of handling the same register
     :param filename: output filename for call graph
