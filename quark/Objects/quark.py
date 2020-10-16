@@ -2,6 +2,7 @@
 # See GPLv3 for copying permission.
 
 import copy
+import sys
 import operator
 
 from prettytable import PrettyTable
@@ -99,6 +100,9 @@ class Quark:
             # find ∩
             result = set(list1).intersection(list2)
             if result:
+                print("哈哈")
+                print(result)
+                sys.exit(0)
 
                 return result
             else:
@@ -229,11 +233,15 @@ class Quark:
         """
 
         # Level 1
-        if set(rule_obj.x1_permission).issubset(set(self.apkinfo.permissions)):
-            rule_obj.check_item[0] = True
-        else:
-            # Exit if the level 1 stage check fails.
-            return
+        if self.apkinfo.ret_type == "DEX":
+            pass
+        elif self.apkinfo.ret_type == "APK":
+
+            if set(rule_obj.x1_permission).issubset(set(self.apkinfo.permissions)):
+                rule_obj.check_item[0] = True
+            else:
+                # Exit if the level 1 stage check fails.
+                return
 
         # Level 2
         test_md0 = rule_obj.x2n3n4_comb[0]["method"]
@@ -267,6 +275,7 @@ class Quark:
         # Level 4
         # [('class_a','method_a'),('class_b','method_b')]
         # Looking for the first layer of the upperfunction
+        # upperfunc is [MethodAnalysis,MethodAnalysis,MethodAnalysis]
         upperfunc0 = self.apkinfo.upperfunc(test_cls0, test_md0)
         upperfunc1 = self.apkinfo.upperfunc(test_cls1, test_md1)
 

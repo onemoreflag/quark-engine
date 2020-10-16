@@ -3,10 +3,13 @@ import json
 import os
 from quark.Objects.quarkrule import QuarkRule
 from quark.Objects.quark import Quark
+from quark.Objects.newquark import NewQuark
 from quark.logo import logo
 from quark.utils.out import print_success, print_info, print_warning
 from quark.utils.weight import Weight
 from tqdm import tqdm
+
+import sys
 
 logo()
 
@@ -33,7 +36,7 @@ def entry_point(summary, detail, apk, rule, output):
     if summary:
         # show summary report
         # Load APK
-        data = Quark(apk)
+        data = NewQuark(apk)
 
         # Load rules
         rules_list = os.listdir(rule)
@@ -45,6 +48,7 @@ def entry_point(summary, detail, apk, rule, output):
 
                 # Run the checker
                 data.run(rule_checker)
+                sys.exit(0)
 
                 data.show_summary_report(rule_checker)
 

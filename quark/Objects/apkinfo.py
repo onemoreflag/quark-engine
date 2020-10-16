@@ -95,10 +95,9 @@ class Apkinfo:
                                                 )
         else:
             result = self.analysis.find_methods(class_name, regex_method_name)
-        result, result_copy = itertools.tee(result)
 
-        if list(result_copy):
-            return result
+        if list(result):
+            return self.analysis.find_methods(class_name, regex_method_name)
 
         return None
 
@@ -120,7 +119,7 @@ class Apkinfo:
                 for _, call, _ in method.get_xref_from():
                     # Get class name and method name:
                     # call.class_name, call.name
-                    upperfunc_result.append((call.class_name, call.name))
+                    upperfunc_result.append(call)
 
             return tools.remove_dup_list(upperfunc_result)
 
