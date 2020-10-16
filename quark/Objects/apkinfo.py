@@ -74,7 +74,7 @@ class Apkinfo:
         elif self.ret_type == "DEX":
             return []
 
-    def find_method(self, class_name=".*", method_name=".*"):
+    def find_method(self, class_name=".*", method_name=".*", access_flag=None, descriptor=None):
         """
         Find method from given class_name and method_name,
         default is find all method.
@@ -86,7 +86,15 @@ class Apkinfo:
 
         regex_method_name = f"^{method_name}$"
 
-        result = self.analysis.find_methods(class_name, regex_method_name)
+        # precise find method
+        if access_flag and descriptor:
+            result = self.analysis.find_methods(classname=class_name,
+                                                methodname=regex_method_name,
+                                                accessflags=access_flag,
+                                                descriptor=descriptor,
+                                                )
+        else:
+            result = self.analysis.find_methods(class_name, regex_method_name)
         result, result_copy = itertools.tee(result)
 
         if list(result_copy):
