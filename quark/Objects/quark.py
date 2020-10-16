@@ -6,7 +6,7 @@ import operator
 
 from prettytable import PrettyTable
 
-from quark.Evaluator.pyeval import PyEval
+from quark.analyzer.android.pyeval import PyEval
 from quark.Objects.apkinfo import Apkinfo
 from quark.utils.weight import Weight
 from quark.utils.colors import (
