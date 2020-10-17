@@ -9,6 +9,7 @@ from prettytable import PrettyTable
 from quark.Evaluator.pyeval import PyEval
 from quark.Objects.apkinfo import Apkinfo
 from quark.utils import tools
+from quark.utils.graph import call_graph
 from quark.utils.colors import (
     red,
     bold,
@@ -27,6 +28,9 @@ class Quark:
 
         self.wrapper_1 = []
         self.wrapper_2 = []
+
+        self.natvie_api_1 = None
+        self.native_api_2 = None
 
         self.seqence_bridge = []
         self.register_bridge = []
@@ -59,6 +63,9 @@ class Quark:
         self.level_3_result.clear()
         self.level_4_result.clear()
         self.level_5_result.clear()
+
+        self.register_bridge.clear()
+        self.seqence_bridge.clear()
 
     def find_intersection(
             self, first_method_analysis_list, second_method_analysis_list, depth=1
@@ -250,22 +257,22 @@ class Quark:
         # Level 3
         if api_1 is not None and api_2 is not None:
             rule_obj.check_item[2] = True
-            api_1 = list(self.apkinfo.find_method(api_1_class_name, api_1_method_name))[
+            self.natvie_api_1 = list(self.apkinfo.find_method(api_1_class_name, api_1_method_name))[
                 0
             ]
-            api_2 = list(self.apkinfo.find_method(api_2_class_name, api_2_method_name))[
+            self.native_api_2 = list(self.apkinfo.find_method(api_2_class_name, api_2_method_name))[
                 0
             ]
-            self.level_3_result.append(api_1)
-            self.level_3_result.append(api_2)
+            self.level_3_result.append(self.natvie_api_1)
+            self.level_3_result.append(self.native_api_2)
         else:
             # Exit if the level 3 stage check fails.
             return
 
         # Level 4
 
-        API_1_xref_from = self.apkinfo.upperfunc(api_1.class_name, api_1.name)
-        API_2_xref_from = self.apkinfo.upperfunc(api_2.class_name, api_2.name)
+        API_1_xref_from = self.apkinfo.upperfunc(self.natvie_api_1.class_name, self.natvie_api_1.name)
+        API_2_xref_from = self.apkinfo.upperfunc(self.native_api_2.class_name, self.native_api_2.name)
 
         self.mutual_parent_function_list = self.find_intersection(
             API_1_xref_from, API_2_xref_from
@@ -277,8 +284,8 @@ class Quark:
                 self.wrapper_1.clear()
                 self.wrapper_2.clear()
 
-                self.find_previous_method(api_1, parent_function, self.wrapper_1)
-                self.find_previous_method(api_2, parent_function, self.wrapper_2)
+                self.find_previous_method(self.natvie_api_1, parent_function, self.wrapper_1)
+                self.find_previous_method(self.native_api_2, parent_function, self.wrapper_2)
 
                 meth_1_under_parent_func_list = copy.copy(self.wrapper_1)
                 meth_2_under_parent_func_list = copy.copy(self.wrapper_2)
@@ -436,6 +443,13 @@ class Quark:
         # add the score
         self.score_sum += score
 
+        # call graph
+        if self.register_bridge:
+            call_graph(self.natvie_api_1, self.native_api_2, self.register_bridge, apkinfo=self.apkinfo,
+                       crime_description=rule_obj.crime)
+
+        self.clean_result()
+
     def show_detail_report(self, rule_obj):
         """
         Show the detail report.
@@ -463,14 +477,14 @@ class Quark:
             print("")
 
             for result in self.level_2_result:
-                print(f"\t\t {result.class_name}{result.name}")
+                print(f"\t\t {result.class_name} {result.name}")
         if rule_obj.check_item[2]:
             print(red(CHECK_LIST), end="")
             print(green(bold("3.Native API Combination")), end="")
 
             print("")
             for result in self.level_3_result:
-                print(f"\t\t {result.class_name}{result.name}")
+                print(f"\t\t {result.class_name} {result.name}")
 
         if rule_obj.check_item[3]:
 
@@ -479,16 +493,25 @@ class Quark:
 
             print("")
             print(f"\t\t Sequence show up in:")
+            newly_result = []
             for seq_method in self.level_4_result:
-                print(f"\t\t {seq_method.access} {seq_method.class_name} {seq_method.name} {seq_method.descriptor}")
+                newly_result.append(
+                    f"\t\t {seq_method.access} {seq_method.class_name} {seq_method.name} {seq_method.descriptor}")
+            for i in list(dict.fromkeys(newly_result)):
+                print(i)
+
         if rule_obj.check_item[4]:
 
             print(red(CHECK_LIST), end="")
             print(green(bold("5.Native API Use Same Parameter")), end="")
             print("")
+
+            newly_result = []
             for reg_method in self.level_5_result:
-                print(
+                newly_result.append(
                     f"\t\t {reg_method.access} {reg_method.class_name} {reg_method.name} {reg_method.descriptor}")
+            for i in list(dict.fromkeys(newly_result)):
+                print(i)
 
         self.clean_result()
 
