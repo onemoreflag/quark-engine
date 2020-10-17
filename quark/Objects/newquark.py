@@ -1,12 +1,14 @@
+import operator
+
 from quark.Objects.apkinfo import Apkinfo
 from prettytable import PrettyTable
 import copy
+from quark.utils import tools
 
 MAX_SEARCH_LAYER = 3
 
 
 class NewQuark:
-
     def __init__(self, apk):
         self.apkinfo = Apkinfo(apk)
 
@@ -34,12 +36,16 @@ class NewQuark:
         # Sum of the each rule
         self.score_sum = 0
 
-    def find_intersection(self, first_method_analysis_list, second_method_analysis_list, depth=1):
+    def find_intersection(
+            self, first_method_analysis_list, second_method_analysis_list, depth=1
+    ):
 
         if first_method_analysis_list and second_method_analysis_list:
 
             # find ∩
-            result = set(first_method_analysis_list).intersection(second_method_analysis_list)
+            result = set(first_method_analysis_list).intersection(
+                second_method_analysis_list
+            )
 
             if result:
                 return result
@@ -58,14 +64,16 @@ class NewQuark:
                     if self.apkinfo.upperfunc(item.class_name, item.name) is not None:
                         next_list1.extend(
                             self.apkinfo.upperfunc(
-                                item.class_name, item.name,
+                                item.class_name,
+                                item.name,
                             ),
                         )
                 for item in second_method_analysis_list:
                     if self.apkinfo.upperfunc(item.class_name, item.name) is not None:
                         next_list2.extend(
                             self.apkinfo.upperfunc(
-                                item.class_name, item.name,
+                                item.class_name,
+                                item.name,
                             ),
                         )
 
@@ -73,7 +81,9 @@ class NewQuark:
         else:
             raise ValueError("List is Null")
 
-    def find_previous_method(self, base_method, parent_function, wrapper, visited_methods=None):
+    def find_previous_method(
+            self, base_method, parent_function, wrapper, visited_methods=None
+    ):
 
         if visited_methods is None:
             visited_methods = set()
@@ -91,8 +101,41 @@ class NewQuark:
                     if item in visited_methods:
                         continue
                     self.find_previous_method(
-                        item, parent_function, wrapper, visited_methods,
+                        item,
+                        parent_function,
+                        wrapper,
+                        visited_methods,
                     )
+
+    def check_sequence(self, mutual_parent_function, first_call_meth_list, second_call_meth_list):
+
+        method_set = self.apkinfo.find_method(
+            mutual_parent_function.class_name,
+            mutual_parent_function.name,
+        )
+        seq_table = []
+
+        if method_set is not None:
+
+            for method in method_set:
+                for _, call, number in method.get_xref_to():
+
+                    if call in first_call_meth_list or call in second_call_meth_list:
+                        seq_table.append((call, number))
+
+            # sorting based on the value of the number
+            if len(seq_table) < 2:
+                # Not Found sequence in same_method
+                return False
+            seq_table.sort(key=operator.itemgetter(1))
+            # seq_table would look like: [(getLocation, 1256), (sendSms, 1566), (sendSms, 2398)]
+
+            method_list = [x[0] for x in seq_table]
+            check_sequence_method = {"first_m_call": first_call_meth_list, "second_m_call": second_call_meth_list}
+
+            return tools.contains(check_sequence_method, method_list)
+        else:
+            return False
 
     def run(self, rule_obj):
         """
@@ -143,7 +186,9 @@ class NewQuark:
         API_1_xref_from = self.apkinfo.upperfunc(api_1.class_name, api_1.name)
         API_2_xref_from = self.apkinfo.upperfunc(api_2.class_name, api_2.name)
 
-        self.mutual_parent_function_list = self.find_intersection(API_1_xref_from, API_2_xref_from)
+        self.mutual_parent_function_list = self.find_intersection(
+            API_1_xref_from, API_2_xref_from
+        )
 
         if self.mutual_parent_function_list is not None:
 
@@ -158,10 +203,8 @@ class NewQuark:
                 self.find_previous_method(api_1, parent_function, self.wrapper_1)
                 self.find_previous_method(api_2, parent_function, self.wrapper_2)
 
-                for item in self.wrapper_2:
+                meth_1_under_parent_func_list = copy.copy(self.wrapper_1)
+                meth_2_under_parent_func_list = copy.copy(self.wrapper_2)
 
-                    print(item.class_name)
-                    print(item.name)
-                    print(item.access)
-                    print(item.descriptor)
-                    print("####")
+                if self.check_sequence(parent_function, meth_1_under_parent_func_list, meth_2_under_parent_func_list):
+                    print("爽啊")

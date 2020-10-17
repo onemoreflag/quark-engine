@@ -20,17 +20,21 @@ def contains(subset_to_check, target_list):
     target_list = ["sendTextMessage", "put", "getCellLocation", "query"]
     then it will return False.
     """
-    target_copy = copy.deepcopy(target_list)
+    target_copy = copy.copy(target_list)
+    for first in subset_to_check["first_m_call"]:
+        for second in subset_to_check["second_m_call"]:
+            method_under_parent = [first, second]
+            print(method_under_parent)
 
-    # Delete elements that do not exist in the subset_to_check list
-    for item in target_copy:
-        if item not in subset_to_check:
-            target_copy.remove(item)
+            # Delete elements that do not exist in the subset_to_check list
+            for item in target_copy:
+                if item not in method_under_parent:
+                    target_copy.remove(item)
 
-    for i in range(len(target_copy) - len(subset_to_check) + 1):
-        for j in range(len(subset_to_check)):
-            if target_copy[i + j] != subset_to_check[j]:
-                break
-        else:
-            return True
-    return False
+            for i in range(len(target_copy) - len(method_under_parent) + 1):
+                for j in range(len(method_under_parent)):
+                    if target_copy[i + j] != method_under_parent[j]:
+                        break
+                else:
+                    return True
+            return False
