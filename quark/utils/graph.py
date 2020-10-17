@@ -163,29 +163,29 @@ def call_graph(
         fontname="Courier New",
     )
 
-    dot.node(
-        "bottom",
-        label="GPLv3 Quark-Engine\nhttps://github.com/quark-engine/quark-engine",
-        shape="plaintext",
-        fontname="Courier New",
-    )
+    # dot.node(
+    #     "bottom",
+    #     label="GPLv3 Quark-Engine\nhttps://github.com/quark-engine/quark-engine",
+    #     shape="plaintext",
+    #     fontname="Courier New",
+    # )
 
-    with dot.subgraph(name="cluster_permission") as permission_subgraph:
-        permission_subgraph.attr(
-            style="rounded", penwidth="1", fillcolor="white", shape="box"
-        )
-        permission_subgraph.attr(
-            label="Required Permissions", fontname="Courier New Bold"
-        )
-
-        # permission node
-        permission_subgraph.node(
-            "permission",
-            label="\n".join(permission),
-            fillcolor="white",
-            fontname="Courier New",
-            shape="none",
-        )
+    # with dot.subgraph(name="cluster_permission") as permission_subgraph:
+    #     permission_subgraph.attr(
+    #         style="rounded", penwidth="1", fillcolor="white", shape="box"
+    #     )
+    #     permission_subgraph.attr(
+    #         label="Required Permissions", fontname="Courier New Bold"
+    #     )
+    #
+    #     # permission node
+    #     permission_subgraph.node(
+    #         "permission",
+    #         label="\n".join(permission),
+    #         fillcolor="white",
+    #         fontname="Courier New",
+    #         shape="none",
+    #     )
 
     # the last node of each node -> permission
     last_wp_cls_name_1, last_wp_md_name_1 = (str(x) for x in first_wrappers_list[0])
@@ -203,22 +203,22 @@ def call_graph(
         fontname="Courier New",
     )
 
-    dot.edge(
-        first_native_method,
-        "permission",
-        "requests",
-        fontname="Courier New",
-        lhead="cluster_permission",
-    )
-    dot.edge(
-        second_native_method,
-        "permission",
-        "requests",
-        fontname="Courier New",
-        lhead="cluster_permission",
-    )
-
-    dot.edge("permission", "bottom", style="invis")
+    # dot.edge(
+    #     first_native_method,
+    #     "permission",
+    #     "requests",
+    #     fontname="Courier New",
+    #     lhead="cluster_permission",
+    # )
+    # dot.edge(
+    #     second_native_method,
+    #     "permission",
+    #     "requests",
+    #     fontname="Courier New",
+    #     lhead="cluster_permission",
+    # )
+    #
+    # dot.edge(second_native_method, "bottom", style="invis")
 
     # show the image
     dot.render()
