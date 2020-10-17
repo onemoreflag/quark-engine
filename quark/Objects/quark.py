@@ -8,34 +8,36 @@ from prettytable import PrettyTable
 
 from quark.Evaluator.pyeval import PyEval
 from quark.Objects.apkinfo import Apkinfo
-from quark.utils.weight import Weight
+from quark.utils import tools
 from quark.utils.colors import (
     red,
     bold,
     yellow,
     green,
 )
-from quark.utils import tools
+from quark.utils.weight import Weight
 
 MAX_SEARCH_LAYER = 3
 CHECK_LIST = "".join(["\t[" + "\u2713" + "]"])
 
 
 class Quark:
-    """XRule is used to test quark's five-stage theory"""
-
     def __init__(self, apk):
-        """
-
-        :param apk: the filename of the apk.
-        """
         self.apkinfo = Apkinfo(apk)
 
-        self.pre_method0 = []
-        self.pre_method1 = []
+        self.wrapper_1 = []
+        self.wrapper_2 = []
 
-        self.same_sequence_show_up = []
-        self.same_operation = []
+        self.seqence_bridge = []
+        self.register_bridge = []
+
+        self.mutual_parent_function_list = []
+
+        self.level_1_result = []
+        self.level_2_result = []
+        self.level_3_result = []
+        self.level_4_result = []
+        self.level_5_result = []
 
         # Json report
         self.json_report = []
@@ -50,56 +52,26 @@ class Quark:
         # Sum of the each rule
         self.score_sum = 0
 
-        self.level_2_reuslt = []
+    def clean_result(self):
 
-    def find_previous_method(self, base_method, top_method, pre_method_list, visited_methods=None):
-        """
-        Find the previous method based on base method before top method.
-        This will append the method into pre_method_list.
+        self.level_1_result.clear()
+        self.level_2_result.clear()
+        self.level_3_result.clear()
+        self.level_4_result.clear()
+        self.level_5_result.clear()
 
-        :param base_method: the base function which needs to be searched.
-        :param top_method: the top-level function which calls the basic function.
-        :param pre_method_list: list is used to track each function.
-        :param visited_methods: set with tested method.
-        :return: None
-        """
-        if visited_methods is None:
-            visited_methods = set()
+    def find_intersection(
+            self, first_method_analysis_list, second_method_analysis_list, depth=1
+    ):
 
-        class_name, method_name = base_method
-        method_set = self.apkinfo.upperfunc(class_name, method_name)
-        visited_methods.add(base_method)
-
-        if method_set is not None:
-
-            if top_method in method_set:
-                pre_method_list.append(base_method)
-            else:
-                for item in method_set:
-                    # prevent to test the tested methods.
-                    if item in visited_methods:
-                        continue
-                    self.find_previous_method(
-                        item, top_method, pre_method_list, visited_methods,
-                    )
-
-    def find_intersection(self, list1, list2, depth=1):
-        """
-        Find the list1 ∩ list2. list1 & list2 are list within tuple, for example,
-        [("class_name","method_name"),...]
-
-        :param list1: first list that contains each method.
-        :param list2: second list that contains each method.
-        :param depth: maximum number of recursive search functions.
-        :return: a set of list1 ∩ list2 or None.
-        """
-        # Check both lists are not null
-        if list1 and list2:
+        if first_method_analysis_list and second_method_analysis_list:
 
             # find ∩
-            result = set(list1).intersection(list2)
-            if result:
+            result = set(first_method_analysis_list).intersection(
+                second_method_analysis_list
+            )
 
+            if result:
                 return result
             else:
                 # Not found same method usage, try to find the next layer.
@@ -108,22 +80,24 @@ class Quark:
                     return None
 
                 # Append first layer into next layer.
-                next_list1 = copy.deepcopy(list1)
-                next_list2 = copy.deepcopy(list2)
+                next_list1 = copy.copy(first_method_analysis_list)
+                next_list2 = copy.copy(second_method_analysis_list)
 
                 # Extend the upper function into next layer.
-                for item in list1:
-                    if self.apkinfo.upperfunc(item[0], item[1]) is not None:
+                for item in first_method_analysis_list:
+                    if self.apkinfo.upperfunc(item.class_name, item.name) is not None:
                         next_list1.extend(
                             self.apkinfo.upperfunc(
-                                item[0], item[1],
+                                item.class_name,
+                                item.name,
                             ),
                         )
-                for item in list2:
-                    if self.apkinfo.upperfunc(item[0], item[1]) is not None:
+                for item in second_method_analysis_list:
+                    if self.apkinfo.upperfunc(item.class_name, item.name) is not None:
                         next_list2.extend(
                             self.apkinfo.upperfunc(
-                                item[0], item[1],
+                                item.class_name,
+                                item.name,
                             ),
                         )
 
@@ -131,34 +105,49 @@ class Quark:
         else:
             raise ValueError("List is Null")
 
-    def check_sequence(self, same_method, first_func, second_func):
-        """
-        Check if the first function appeared before the second function.
+    def find_previous_method(
+            self, base_method, parent_function, wrapper, visited_methods=None
+    ):
 
-        :param same_method: function that call the first function and second functions at the same time.
-        :param first_func: the first show up function, which is (class_name, method_name)
-        :param second_func: the second show up function, which is (class_name, method_name)
-        :return: True or False
-        """
-        same_class_name, same_method_name = same_method
-        first_class_name, first_method_name = first_func
-        second_class_name, second_method_name = second_func
+        if visited_methods is None:
+            visited_methods = set()
+
+        method_set = self.apkinfo.upperfunc(base_method.class_name, base_method.name)
+        visited_methods.add(base_method)
+
+        if method_set is not None:
+
+            if parent_function in method_set:
+                wrapper.append(base_method)
+            else:
+                for item in method_set:
+                    # prevent to test the tested methods.
+                    if item in visited_methods:
+                        continue
+                    self.find_previous_method(
+                        item,
+                        parent_function,
+                        wrapper,
+                        visited_methods,
+                    )
+
+    def check_sequence(
+            self, mutual_parent_function, first_call_meth_list, second_call_meth_list
+    ):
 
         method_set = self.apkinfo.find_method(
-            same_class_name, same_method_name,
+            mutual_parent_function.class_name,
+            mutual_parent_function.name,
         )
         seq_table = []
 
         if method_set is not None:
+
             for method in method_set:
                 for _, call, number in method.get_xref_to():
 
-                    to_md_name = str(call.name)
-
-                    if (to_md_name == first_method_name) or (
-                            to_md_name == second_method_name
-                    ):
-                        seq_table.append((call.name, number))
+                    if call in first_call_meth_list or call in second_call_meth_list:
+                        seq_table.append((call, number))
 
             # sorting based on the value of the number
             if len(seq_table) < 2:
@@ -168,33 +157,29 @@ class Quark:
             # seq_table would look like: [(getLocation, 1256), (sendSms, 1566), (sendSms, 2398)]
 
             method_list = [x[0] for x in seq_table]
-            check_sequence_method = [first_method_name, second_method_name]
+            check_sequence_method = {
+                "first_m_call": first_call_meth_list,
+                "second_m_call": second_call_meth_list,
+            }
 
-            return tools.contains(check_sequence_method, method_list)
+            return tools.contains(
+                check_sequence_method,
+                method_list,
+                mutual_parent_function,
+                self.seqence_bridge,
+            )
         else:
             return False
 
-    def check_parameter(
-            self, common_method,
-            first_method_name, second_method_name,
-    ):
-        """
-        check the usage of the same parameter between two method.
-
-        :param common_method: function that call the first function and second functions at the same time.
-        :param first_method_name: function which calls before the second method.
-        :param second_method_name: function which calls after the first method.
-        :return: True or False
-        """
+    def check_parameter(self, mutual_parent_function, first_call, second_call):
 
         pyeval = PyEval()
         # Check if there is an operation of the same register
         state = False
 
-        common_class_name, common_method_name = common_method
-
         for bytecode_obj in self.apkinfo.get_method_bytecode(
-                common_class_name, common_method_name,
+                mutual_parent_function.class_name,
+                mutual_parent_function.name,
         ):
             # ['new-instance', 'v4', Lcom/google/progress/SMSHelper;]
             instruction = [bytecode_obj.mnemonic]
@@ -211,7 +196,10 @@ class Quark:
 
         for table in pyeval.show_table():
             for val_obj in table:
-                matchers = [first_method_name, second_method_name]
+                matchers = [
+                    f"{first_call.class_name}->{first_call.name}{first_call.descriptor}",
+                    f"{second_call.class_name}->{second_call.name}{second_call.descriptor}",
+                ]
                 matching = [
                     s for s in val_obj.called_by_func if all(xs in s for xs in matchers)
                 ]
@@ -223,87 +211,95 @@ class Quark:
     def run(self, rule_obj):
         """
         Run the five levels check to get the y_score.
-
-        :param rule_obj: the instance of the RuleObject.
-        :return: None
         """
 
         # Level 1
-        if set(rule_obj.x1_permission).issubset(set(self.apkinfo.permissions)):
-            rule_obj.check_item[0] = True
-        else:
-            # Exit if the level 1 stage check fails.
-            return
+
+        if self.apkinfo.ret_type == "DEX":
+            pass
+        elif self.apkinfo.ret_type == "APK":
+
+            if set(rule_obj.x1_permission).issubset(set(self.apkinfo.permissions)):
+                rule_obj.check_item[0] = True
+            else:
+                # Exit if the level 1 stage check fails.
+                return
 
         # Level 2
-        test_md0 = rule_obj.x2n3n4_comb[0]["method"]
-        test_cls0 = rule_obj.x2n3n4_comb[0]["class"]
-        test_md1 = rule_obj.x2n3n4_comb[1]["method"]
-        test_cls1 = rule_obj.x2n3n4_comb[1]["class"]
+        api_1_method_name = rule_obj.x2n3n4_comb[0]["method"]
+        api_1_class_name = rule_obj.x2n3n4_comb[0]["class"]
+        api_2_method_name = rule_obj.x2n3n4_comb[1]["method"]
+        api_2_class_name = rule_obj.x2n3n4_comb[1]["class"]
 
-        first_method_result = self.apkinfo.find_method(test_cls0, test_md0)
-        second_method_result = self.apkinfo.find_method(test_cls1, test_md1)
+        api_1 = self.apkinfo.find_method(api_1_class_name, api_1_method_name)
+        api_2 = self.apkinfo.find_method(api_2_class_name, api_2_method_name)
 
-        self.level_2_reuslt.clear()
-
-        if first_method_result is not None or second_method_result is not None:
+        if api_1 is not None:
             rule_obj.check_item[1] = True
 
-            if first_method_result is not None:
-                self.level_2_reuslt.append((test_cls0, test_md0))
-            if second_method_result is not None:
-                self.level_2_reuslt.append((test_cls1, test_md1))
-        else:
-            # Exit if the level 2 stage check fails.
-            return
+            self.level_2_result.append(
+                list(self.apkinfo.find_method(api_1_class_name, api_1_method_name))[0]
+            )
+        if api_2 is not None:
+            rule_obj.x2n3n4_comb[1] = True
+
+            self.level_2_result.append(
+                list(self.apkinfo.find_method(api_2_class_name, api_2_method_name))[0]
+            )
 
         # Level 3
-        if first_method_result is not None and second_method_result is not None:
+        if api_1 is not None and api_2 is not None:
             rule_obj.check_item[2] = True
+            api_1 = list(self.apkinfo.find_method(api_1_class_name, api_1_method_name))[
+                0
+            ]
+            api_2 = list(self.apkinfo.find_method(api_2_class_name, api_2_method_name))[
+                0
+            ]
+            self.level_3_result.append(api_1)
+            self.level_3_result.append(api_2)
         else:
             # Exit if the level 3 stage check fails.
             return
 
         # Level 4
-        # [('class_a','method_a'),('class_b','method_b')]
-        # Looking for the first layer of the upperfunction
-        upperfunc0 = self.apkinfo.upperfunc(test_cls0, test_md0)
-        upperfunc1 = self.apkinfo.upperfunc(test_cls1, test_md1)
 
-        same = self.find_intersection(upperfunc0, upperfunc1)
+        API_1_xref_from = self.apkinfo.upperfunc(api_1.class_name, api_1.name)
+        API_2_xref_from = self.apkinfo.upperfunc(api_2.class_name, api_2.name)
 
-        if same is not None:
+        self.mutual_parent_function_list = self.find_intersection(
+            API_1_xref_from, API_2_xref_from
+        )
 
-            # Clear the results from the previous rule
-            self.same_sequence_show_up.clear()
-            self.same_operation.clear()
+        if self.mutual_parent_function_list is not None:
 
-            for common_method in same:
+            for parent_function in self.mutual_parent_function_list:
+                self.wrapper_1.clear()
+                self.wrapper_2.clear()
 
-                base_method_0 = (test_cls0, test_md0)
-                base_method_1 = (test_cls1, test_md1)
-                # Clear the results from the previous common_method
-                self.pre_method0.clear()
-                self.pre_method1.clear()
-                self.find_previous_method(
-                    base_method_0, common_method, self.pre_method0,
-                )
-                self.find_previous_method(
-                    base_method_1, common_method, self.pre_method1,
-                )
-                # TODO It may have many previous method in
-                # self.pre_method
-                pre_0 = self.pre_method0[0]
-                pre_1 = self.pre_method1[0]
+                self.find_previous_method(api_1, parent_function, self.wrapper_1)
+                self.find_previous_method(api_2, parent_function, self.wrapper_2)
 
-                if self.check_sequence(common_method, pre_0, pre_1):
+                meth_1_under_parent_func_list = copy.copy(self.wrapper_1)
+                meth_2_under_parent_func_list = copy.copy(self.wrapper_2)
+
+                if self.check_sequence(
+                        parent_function,
+                        meth_1_under_parent_func_list,
+                        meth_2_under_parent_func_list,
+                ):
                     rule_obj.check_item[3] = True
-                    self.same_sequence_show_up.append(common_method)
+                    self.level_4_result.append(parent_function)
 
                     # Level 5
-                    if self.check_parameter(common_method, str(pre_0[1]), str(pre_1[1])):
-                        rule_obj.check_item[4] = True
-                        self.same_operation.append(common_method)
+                    for bg in self.seqence_bridge:
+
+                        if self.check_parameter(
+                                bg["parent"], bg["first_call"], bg["second_call"]
+                        ):
+                            rule_obj.check_item[4] = True
+                            self.register_bridge.append(bg)
+                            self.level_5_result.append(bg["parent"])
 
         else:
             # Exit if the level 4 stage check fails.
@@ -357,10 +353,12 @@ class Quark:
         api = []
         if rule_obj.check_item[1]:
             for class_name, method_name in self.level_2_reuslt:
-                api.append({
-                    "class": class_name,
-                    "method": method_name,
-                })
+                api.append(
+                    {
+                        "class": class_name,
+                        "method": method_name,
+                    }
+                )
 
         # Assign level 3 examine result
         combination = []
@@ -372,20 +370,24 @@ class Quark:
         same_operation_show_up = []
 
         # Check examination has passed level 4
-        if self.same_sequence_show_up and rule_obj.check_item[3]:
-            for same_sequence_cls, same_sequence_md in self.same_sequence_show_up:
-                sequnce_show_up.append({
-                    "class": repr(same_sequence_cls),
-                    "method": repr(same_sequence_md),
-                })
+        if self.level_4_result and rule_obj.check_item[3]:
+            for same_sequence_cls, same_sequence_md in self.level_4_result:
+                sequnce_show_up.append(
+                    {
+                        "class": repr(same_sequence_cls),
+                        "method": repr(same_sequence_md),
+                    }
+                )
 
             # Check examination has passed level 5
-            if self.same_operation and rule_obj.check_item[4]:
-                for same_operation_cls, same_operation_md in self.same_operation:
-                    same_operation_show_up.append({
-                        "class": repr(same_operation_cls),
-                        "method": repr(same_operation_md),
-                    })
+            if self.level_5_result and rule_obj.check_item[4]:
+                for same_operation_cls, same_operation_md in self.level_5_result:
+                    same_operation_show_up.append(
+                        {
+                            "class": repr(same_operation_cls),
+                            "method": repr(same_operation_md),
+                        }
+                    )
 
         crime = {
             "crime": rule_obj.crime,
@@ -418,11 +420,16 @@ class Quark:
         weight = rule_obj.get_score(conf)
         score = rule_obj.yscore
 
-        self.tb.add_row([
-            green(rule_obj.crime), yellow(
-                confidence,
-            ), score, red(weight),
-        ])
+        self.tb.add_row(
+            [
+                green(rule_obj.crime),
+                yellow(
+                    confidence,
+                ),
+                score,
+                red(weight),
+            ]
+        )
 
         # add the weight
         self.weight_sum += weight
@@ -455,19 +462,16 @@ class Quark:
             print(green(bold("2.Native API Usage")), end="")
             print("")
 
-            for class_name, method_name in self.level_2_reuslt:
-                print(f"\t\t ({class_name}, {method_name})")
+            for result in self.level_2_result:
+                print(f"\t\t {result.class_name}{result.name}")
         if rule_obj.check_item[2]:
             print(red(CHECK_LIST), end="")
             print(green(bold("3.Native API Combination")), end="")
 
             print("")
-            print(
-                f"\t\t ({rule_obj.x2n3n4_comb[0]['class']}, {rule_obj.x2n3n4_comb[0]['method']})",
-            )
-            print(
-                f"\t\t ({rule_obj.x2n3n4_comb[1]['class']}, {rule_obj.x2n3n4_comb[1]['method']})",
-            )
+            for result in self.level_3_result:
+                print(f"\t\t {result.class_name}{result.name}")
+
         if rule_obj.check_item[3]:
 
             print(red(CHECK_LIST), end="")
@@ -475,15 +479,18 @@ class Quark:
 
             print("")
             print(f"\t\t Sequence show up in:")
-            for seq_method in self.same_sequence_show_up:
-                print(f"\t\t {repr(seq_method)}")
+            for seq_method in self.level_4_result:
+                print(f"\t\t {seq_method.access} {seq_method.class_name} {seq_method.name} {seq_method.descriptor}")
         if rule_obj.check_item[4]:
 
             print(red(CHECK_LIST), end="")
             print(green(bold("5.Native API Use Same Parameter")), end="")
             print("")
-            for seq_operation in self.same_operation:
-                print(f"\t\t {repr(seq_operation)}")
+            for reg_method in self.level_5_result:
+                print(
+                    f"\t\t {reg_method.access} {reg_method.class_name} {reg_method.name} {reg_method.descriptor}")
+
+        self.clean_result()
 
 
 if __name__ == "__main__":

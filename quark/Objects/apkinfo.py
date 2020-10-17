@@ -4,7 +4,8 @@ import hashlib
 import itertools
 import os
 
-from androguard.misc import AnalyzeAPK
+from androguard.misc import AnalyzeAPK, AnalyzeDex
+from androguard.core import androconf
 
 from quark.Objects.bytecodeobject import BytecodeObject
 from quark.utils import tools
@@ -13,12 +14,19 @@ from quark.utils import tools
 class Apkinfo:
     """Information about apk based on androguard analysis"""
 
-    def __init__(self, apk_filepath):
+    def __init__(self, filepath):
         """Information about apk based on androguard analysis"""
         # return the APK, list of DalvikVMFormat, and Analysis objects
-        self.apk, self.dalvikvmformat, self.analysis = AnalyzeAPK(apk_filepath)
-        self.apk_filename = os.path.basename(apk_filepath)
-        self.apk_filepath = apk_filepath
+
+        self.ret_type = androconf.is_android(filepath)
+
+        if self.ret_type == "APK":
+            self.apk, self.dalvikvmformat, self.analysis = AnalyzeAPK(filepath)
+        elif self.ret_type == "DEX":
+            _, _, self.analysis = AnalyzeDex(filepath)
+
+        self.apk_filename = os.path.basename(filepath)
+        self.filepath = filepath
 
     def __repr__(self):
         return f"<Apkinfo-APK:{self.apk_filename}>"
@@ -30,7 +38,7 @@ class Apkinfo:
 
         :return: a string of apk filename
         """
-        return os.path.basename(self.apk_filepath)
+        return os.path.basename(self.filepath)
 
     @property
     def filesize(self):
@@ -39,7 +47,7 @@ class Apkinfo:
 
         :return: a number of size bytes
         """
-        return os.path.getsize(self.apk_filepath)
+        return os.path.getsize(self.filepath)
 
     @property
     def md5(self):
@@ -49,7 +57,7 @@ class Apkinfo:
         :return: a string of md5 checksum of the apk file
         """
         md5 = hashlib.md5()
-        with open(self.apk_filepath, "rb") as f:
+        with open(self.filepath, "rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
                 md5.update(chunk)
         return md5.hexdigest()
@@ -61,7 +69,10 @@ class Apkinfo:
 
         :return: a list of all permissions
         """
-        return self.apk.get_permissions()
+        if self.ret_type == "APK":
+            return self.apk.get_permissions()
+        elif self.ret_type == "DEX":
+            return []
 
     def find_method(self, class_name=".*", method_name=".*"):
         """
@@ -76,10 +87,9 @@ class Apkinfo:
         regex_method_name = f"^{method_name}$"
 
         result = self.analysis.find_methods(class_name, regex_method_name)
-        result, result_copy = itertools.tee(result)
 
-        if list(result_copy):
-            return result
+        if list(result):
+            return self.analysis.find_methods(class_name, regex_method_name)
 
         return None
 
@@ -101,7 +111,7 @@ class Apkinfo:
                 for _, call, _ in method.get_xref_from():
                     # Get class name and method name:
                     # call.class_name, call.name
-                    upperfunc_result.append((call.class_name, call.name))
+                    upperfunc_result.append(call)
 
             return tools.remove_dup_list(upperfunc_result)
 
@@ -119,8 +129,10 @@ class Apkinfo:
 
         result = self.analysis.find_methods(class_name, method_name)
 
-        if list(result):
-            for method in self.analysis.find_methods(class_name, method_name):
+        result, result_copy = itertools.tee(result)
+
+        if list(result_copy):
+            for method in result:
                 try:
                     for _, ins in method.get_method().get_instructions_idx():
                         bytecode_obj = None
