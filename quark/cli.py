@@ -48,7 +48,6 @@ def entry_point(summary, detail, apk, rule, output):
 
                 # Run the checker
                 data.run(rule_checker)
-                sys.exit(0)
 
                 data.show_summary_report(rule_checker)
 
@@ -61,7 +60,7 @@ def entry_point(summary, detail, apk, rule, output):
         # show summary report
 
         # Load APK
-        data = Quark(apk)
+        data = NewQuark(apk)
 
         # Load rules
         rules_list = os.listdir(rule)

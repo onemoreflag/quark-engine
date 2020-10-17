@@ -8,7 +8,7 @@ def remove_dup_list(element):
     return list(set(element))
 
 
-def contains(subset_to_check, target_list):
+def contains(subset_to_check, target_list, mutal_parent_function, record_bridge):
     """
     Check the sequence pattern within two list.
     -----------------------------------------------------------------
@@ -24,7 +24,6 @@ def contains(subset_to_check, target_list):
     for first in subset_to_check["first_m_call"]:
         for second in subset_to_check["second_m_call"]:
             method_under_parent = [first, second]
-            print(method_under_parent)
 
             # Delete elements that do not exist in the subset_to_check list
             for item in target_copy:
@@ -36,5 +35,9 @@ def contains(subset_to_check, target_list):
                     if target_copy[i + j] != method_under_parent[j]:
                         break
                 else:
+                    # build the bridge
+                    bg = {"parent": mutal_parent_function, "first_call": first, "second_call": second}
+                    record_bridge.append(bg)
+
                     return True
             return False
