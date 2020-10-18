@@ -145,14 +145,14 @@ def call_graph(
 
             native_call_subgraph.node(
                 f"{native_api_1.full_name}",
-                label=f"Class: {native_api_1.class_name}\nMethod:{native_api_1.name}",
+                label=f"Class: {native_api_1.class_name}\nMethod: {native_api_1.name}",
                 fontcolor="blue",
                 shape="none",
                 fontname="Courier New",
             )
             native_call_subgraph.node(
                 f"{native_api_2.full_name}",
-                label=f"Class: {native_api_2.class_name}\nMethod:{native_api_2.name}",
+                label=f"Class: {native_api_2.class_name}\nMethod: {native_api_2.name}",
                 fontcolor="blue",
                 shape="none",
                 fontname="Courier New",
