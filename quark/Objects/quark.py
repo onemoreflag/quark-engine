@@ -5,7 +5,7 @@ import copy
 import operator
 
 from prettytable import PrettyTable
-
+from quark.utils.graph import call_graph
 from quark.Evaluator.pyeval import PyEval
 from quark.Objects.apkinfo import Apkinfo
 from quark.utils.weight import Weight
@@ -51,6 +51,8 @@ class Quark:
         self.score_sum = 0
 
         self.level_2_reuslt = []
+
+        self.call_graph_analysis = []
 
     def find_previous_method(self, base_method, top_method, pre_method_list, visited_methods=None):
         """
@@ -155,9 +157,7 @@ class Quark:
 
                     to_md_name = str(call.name)
 
-                    if (to_md_name == first_method_name) or (
-                            to_md_name == second_method_name
-                    ):
+                    if to_md_name in (first_method_name, second_method_name):
                         seq_table.append((call.name, number))
 
             # sorting based on the value of the number
@@ -169,8 +169,8 @@ class Quark:
 
             method_list = [x[0] for x in seq_table]
             check_sequence_method = [first_method_name, second_method_name]
-
-            return tools.contains(check_sequence_method, method_list)
+            if tools.contains(check_sequence_method, method_list):
+                return tools.contains(check_sequence_method, method_list)
         else:
             return False
 
@@ -302,6 +302,25 @@ class Quark:
 
                     # Level 5
                     if self.check_parameter(common_method, str(pre_0[1]), str(pre_1[1])):
+                        # call graph
+                        parent_function_method_analysis = \
+                            list(self.apkinfo.find_method(common_method[0], common_method[1]))[0]
+                        first_function_method_analysis = \
+                            list(self.apkinfo.find_method(pre_0[0], pre_0[1]))[0]
+                        second_function_method_analysis = \
+                            list(self.apkinfo.find_method(pre_1[0], pre_1[1]))[
+                                0]
+                        natvie_api_1 = list(self.apkinfo.find_method(test_cls0, test_md0))[0]
+                        natvie_api_2 = list(self.apkinfo.find_method(test_cls1, test_md1))[0]
+
+                        analysis_call = {"parent": parent_function_method_analysis,
+                                         "first_call": first_function_method_analysis,
+                                         "second_call": second_function_method_analysis}
+
+                        print("#############################")
+                        call_graph(natvie_api_1, natvie_api_2, analysis_call, rule_obj.crime, self.apkinfo)
+                        print("#############################")
+
                         rule_obj.check_item[4] = True
                         self.same_operation.append(common_method)
 
