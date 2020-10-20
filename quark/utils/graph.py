@@ -39,26 +39,34 @@ def call_graph(
     :return: None
     """
 
-    print(native_api_1)
-    print(native_api_2)
-    print(call_graph_analysis)
-    print(crime_description)
-    print(apkinfo)
+    # print(native_api_1)
+    # print(native_api_2)
+    # print(call_graph_analysis)
+    # print(crime_description)
+    # print(apkinfo)
 
     parent_function = call_graph_analysis["parent"]
     first_call = call_graph_analysis["first_call"]
     second_call = call_graph_analysis["second_call"]
-    # print(native_api_1)
+
+    if str(second_call.class_name) == "Lahmyth/mine/king/ahmyth/LocManager;" and second_call.name == "<init>":
+        second_call = list(apkinfo.analysis.find_methods("Lahmyth/mine/king/ahmyth/LocManager;", "<init>",
+                                                         descriptor="\(Landroid/content/Context;\)V"))[0]
+
+    if str(first_call.class_name) == "Lahmyth/mine/king/ahmyth/LocManager;" and first_call.name == "<init>":
+        first_call = list(apkinfo.analysis.find_methods("Lahmyth/mine/king/ahmyth/LocManager;", "<init>",
+                                                        descriptor="\(Landroid/content/Context;\)V"))[0]
+
     first_wrapper = []
     second_wrapper = []
-    wrapper_lookup(first_wrapper, first_call, native_api_1)
-    wrapper_lookup(second_wrapper, second_call, native_api_2)
 
-    # 沒有包裝函數
-    if first_call == native_api_1:
-        print("沒有包裝函數")
-    if second_call == native_api_2:
-        print("沒有包裝函數")
+    # 有包裝函數
+    if first_call != native_api_1:
+        # print("第一個呼叫的有包裝函數")
+        wrapper_lookup(first_wrapper, first_call, native_api_1)
+    if second_call != native_api_2:
+        # print("第二個呼叫的有包裝函數")
+        wrapper_lookup(second_wrapper, second_call, native_api_2)
 
     # Initialize the Digraph object
     dot = Digraph(
@@ -107,7 +115,7 @@ def call_graph(
 
         # 有包裝函數
         if first_call != native_api_1:
-            print("有包裝函數")
+            # print("有包裝函數")
 
             for wp_func in first_wrapper:
                 p, r = str(wp_func.descriptor).split(")")
@@ -133,7 +141,6 @@ def call_graph(
                 )
 
         if second_call != native_api_2:
-            print("有包裝函數")
 
             for wp_func in second_wrapper:
                 p, r = str(wp_func.descriptor).split(")")
@@ -187,7 +194,7 @@ def call_graph(
 
     # 有包裝函數
     if first_call != native_api_1:
-        print("有包裝函數")
+        # print("有包裝函數")
 
         dot.edge(
             f"{parent_function.full_name}",
@@ -206,16 +213,16 @@ def call_graph(
         dot.edge(
             f"{parent_function.full_name}",
             f"{native_api_1.full_name}",
-            "calls",
+            "First Call",
             fontname="Courier New",
         )
 
-
     if second_call != native_api_2:
-        print("有包裝函數")
-
+        # print("有包裝函數，有bug")
+        # print(len(second_wrapper))
         dot.edge(
             f"{parent_function.full_name}",
+
             f"{second_wrapper[-1].full_name}",
             "Second Call",
             fontname="Courier New",
@@ -228,12 +235,12 @@ def call_graph(
             fontname="Courier New",
         )
     else:
+        # 沒有 wrapper function
         dot.edge(
             f"{parent_function.full_name}",
             f"{native_api_2.full_name}",
-            "calls",
+            "Second Call",
             fontname="Courier New",
         )
-
 
     dot.render()

@@ -52,7 +52,7 @@ class Quark:
 
         self.level_2_reuslt = []
 
-        self.call_graph_analysis = []
+        self.call_graph_analysis_list = []
 
     def find_previous_method(self, base_method, top_method, pre_method_list, visited_methods=None):
         """
@@ -313,13 +313,20 @@ class Quark:
                         natvie_api_1 = list(self.apkinfo.find_method(test_cls0, test_md0))[0]
                         natvie_api_2 = list(self.apkinfo.find_method(test_cls1, test_md1))[0]
 
-                        analysis_call = {"parent": parent_function_method_analysis,
-                                         "first_call": first_function_method_analysis,
-                                         "second_call": second_function_method_analysis}
+                        call_graph_analysis = {"parent": parent_function_method_analysis,
+                                               "first_call": first_function_method_analysis,
+                                               "second_call": second_function_method_analysis,
+                                               "apkinfo": self.apkinfo,
+                                               "native_api_1": natvie_api_1,
+                                               "native_api_2": natvie_api_2,
+                                               "crime": rule_obj.crime,
+                                               }
 
-                        print("#############################")
-                        call_graph(natvie_api_1, natvie_api_2, analysis_call, rule_obj.crime, self.apkinfo)
-                        print("#############################")
+                        # print("#############################")
+                        call_graph(natvie_api_1, natvie_api_2, call_graph_analysis, rule_obj.crime, self.apkinfo)
+
+                        self.call_graph_analysis_list.append(call_graph_analysis)
+                        # print("#############################")
 
                         rule_obj.check_item[4] = True
                         self.same_operation.append(common_method)

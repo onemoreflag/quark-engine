@@ -7,7 +7,7 @@ from quark.logo import logo
 from quark.utils.out import print_success, print_info, print_warning
 from quark.utils.weight import Weight
 from tqdm import tqdm
-
+from quark.utils.big_call_graph import big_call_graph
 logo()
 
 
@@ -53,6 +53,23 @@ def entry_point(summary, detail, apk, rule, output):
         print_info("Total Score: " + str(data.score_sum))
         print(data.tb)
 
+        # Big call graph
+        print("Big CALL GRAPH")
+        # print(data.call_graph_analysis_list)
+        print_success("OK")
+
+        from collections import defaultdict
+        dd = defaultdict(list)
+
+        for item in data.call_graph_analysis_list:
+            # print(item["parent"].class_name, item["parent"].name, item["crime"])
+            key = f"{item['parent'].class_name}{item['parent'].name}"
+            dd[key].append(item["crime"])
+
+
+
+        big_call_graph(dd)
+
     if detail:
         # show summary report
 
@@ -72,7 +89,6 @@ def entry_point(summary, detail, apk, rule, output):
                 data.run(rule_checker)
 
                 data.show_detail_report(rule_checker)
-                print_success("OK")
 
     if output:
         # show json report
