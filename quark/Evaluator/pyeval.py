@@ -36,6 +36,8 @@ class PyEval:
         self.eval = {
             # invoke-kind
             "invoke-virtual": self.INVOKE_VIRTUAL,
+            "invoke-virtual/range": self.INVOKE_VIRTUAL_RANGE,
+            "invoke-interface": self.INVOKE_INTERFACE,
             "invoke-direct": self.INVOKE_DIRECT,
             "invoke-static": self.INVOKE_STATIC,
             # move-result-kind
@@ -132,6 +134,24 @@ class PyEval:
         invoke-virtual { parameters }, methodtocall
 
         Invokes a virtual method with parameters.
+        """
+        self._invoke(instruction)
+
+    @logger
+    def INVOKE_VIRTUAL_RANGE(self, instruction):
+        """
+        invoke-virtual/range { parameters }, methodtocall
+
+        Invokes a virtual-range method with parameters.
+        """
+        self._invoke(instruction)
+
+    @logger
+    def INVOKE_INTERFACE(self, instruction):
+        """
+        invoke-virtual/range { parameters }, methodtocall
+
+        Invokes a virtual-range method with parameters.
         """
         self._invoke(instruction)
 
