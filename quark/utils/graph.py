@@ -4,14 +4,14 @@ from graphviz import Digraph
 def wrapper_lookup(wrapper, top_method, native_api):
     next_level = []
 
-    for _, meth, _ in top_method.get_xref_to():
-        if meth == native_api:
+    for _, method, _ in top_method.get_xref_to():
+        if method == native_api:
             wrapper.append(top_method)
             return
-        elif meth.is_android_api():
+        elif method.is_android_api():
             continue
         else:
-            next_level.append(meth)
+            next_level.append(method)
 
     for next_level_method in next_level:
         wrapper_lookup(wrapper, next_level_method, native_api)
@@ -39,12 +39,6 @@ def call_graph(
     :return: None
     """
 
-    # print(native_api_1)
-    # print(native_api_2)
-    # print(call_graph_analysis)
-    # print(crime_description)
-    # print(apkinfo)
-
     parent_function = call_graph_analysis["parent"]
     first_call = call_graph_analysis["first_call"]
     second_call = call_graph_analysis["second_call"]
@@ -60,12 +54,9 @@ def call_graph(
     first_wrapper = []
     second_wrapper = []
 
-    # 有包裝函數
     if first_call != native_api_1:
-        # print("第一個呼叫的有包裝函數")
         wrapper_lookup(first_wrapper, first_call, native_api_1)
     if second_call != native_api_2:
-        # print("第二個呼叫的有包裝函數")
         wrapper_lookup(second_wrapper, second_call, native_api_2)
 
     # Initialize the Digraph object
@@ -81,8 +72,6 @@ def call_graph(
         },
     )
     dot.attr(compound="true")
-
-    # 母函數
 
     with dot.subgraph(name="cluster_mutual") as mutual_parent_function_description:
         mutual_parent_function_description.attr(
@@ -106,16 +95,12 @@ def call_graph(
             fontname="Courier New",
         )
 
-    # 包裝函數開始
-
     with dot.subgraph(name="cluster_0") as wrapper:
         wrapper.attr(label="Wrapped Functions", fontname="Courier New Bold")
         wrapper.attr(style="rounded", penwidth="1", fillcolor="red", shape="box")
         # Build the first call nodes
 
-        # 有包裝函數
         if first_call != native_api_1:
-            # print("有包裝函數")
 
             for wp_func in first_wrapper:
                 p, r = str(wp_func.descriptor).split(")")
@@ -192,9 +177,7 @@ def call_graph(
 
     # mutual parent function -> the first node of each node
 
-    # 有包裝函數
     if first_call != native_api_1:
-        # print("有包裝函數")
 
         dot.edge(
             f"{parent_function.full_name}",
@@ -218,8 +201,6 @@ def call_graph(
         )
 
     if second_call != native_api_2:
-        # print("有包裝函數，有bug")
-        # print(len(second_wrapper))
         dot.edge(
             f"{parent_function.full_name}",
 
@@ -235,7 +216,6 @@ def call_graph(
             fontname="Courier New",
         )
     else:
-        # 沒有 wrapper function
         dot.edge(
             f"{parent_function.full_name}",
             f"{native_api_2.full_name}",

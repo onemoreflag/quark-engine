@@ -7,7 +7,7 @@ from quark.logo import logo
 from quark.utils.out import print_success, print_info, print_warning
 from quark.utils.weight import Weight
 from tqdm import tqdm
-from quark.utils.big_call_graph import big_call_graph
+from quark.utils.output_parent import output_parent
 logo()
 
 
@@ -68,7 +68,7 @@ def entry_point(summary, detail, apk, rule, output):
 
 
 
-        big_call_graph(dd)
+        output_parent(dd)
 
     if detail:
         # show summary report
